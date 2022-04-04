@@ -14,6 +14,12 @@ func main() {
 	pulumi.Run(func(ctx *pulumi.Context) error {
 		prefix := "pulumi-eks-go"
 
+		resourceTags := make(map[string]string)
+
+		resourceTags["CreatedBy"] = "pulumi-eks-go"
+		resourceTags["GitOrg"] = "gsweene2"
+		resourceTags["GitRepo"] = "pulumi"
+
 		// Resource: VPC
 		// Purpose: Amazon Virtual Private Cloud (Amazon VPC) enables you to launch AWS resources into a virtual network that you've defined.
 		// Docs: https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html
@@ -22,13 +28,12 @@ func main() {
 		cidrBlock := "10.0.0.0/16"
 
 		// VPC Args
+		resourceTags["Name"] = prefix + "-vpc"
 		vpcArgs := &ec2.VpcArgs{
 			CidrBlock:          pulumi.String(cidrBlock),
 			EnableDnsHostnames: pulumi.Bool(true),
 			InstanceTenancy:    pulumi.String("default"),
-			Tags: pulumi.StringMap{
-				"Name": pulumi.String(prefix + "-vpc"),
-			},
+			Tags:               pulumi.ToStringMap(resourceTags),
 		}
 
 		// VPC
@@ -43,70 +48,64 @@ func main() {
 		// Docs: https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html
 
 		// 3 Private Subnets
+		resourceTags["Name"] = prefix + "-priv-subnet-1"
 		privSubnet1, err := ec2.NewSubnet(ctx, prefix+"-priv-subnet-1", &ec2.SubnetArgs{
 			VpcId:            vpc.ID(),
 			CidrBlock:        pulumi.String("10.0.1.0/24"),
 			AvailabilityZone: pulumi.String("us-east-2a"),
-			Tags: pulumi.StringMap{
-				"Name": pulumi.String(prefix + "-priv-subnet-1"),
-			},
+			Tags:             pulumi.ToStringMap(resourceTags),
 		})
 		if err != nil {
 			return err
 		}
+		resourceTags["Name"] = prefix + "-priv-subnet-2"
 		privSubnet2, err := ec2.NewSubnet(ctx, prefix+"-priv-subnet-2", &ec2.SubnetArgs{
 			VpcId:            vpc.ID(),
 			CidrBlock:        pulumi.String("10.0.2.0/24"),
 			AvailabilityZone: pulumi.String("us-east-2b"),
-			Tags: pulumi.StringMap{
-				"Name": pulumi.String(prefix + "-priv-subnet-2"),
-			},
+			Tags:             pulumi.ToStringMap(resourceTags),
 		})
 		if err != nil {
 			return err
 		}
+		resourceTags["Name"] = prefix + "-priv-subnet-3"
 		privSubnet3, err := ec2.NewSubnet(ctx, prefix+"-priv-subnet-3", &ec2.SubnetArgs{
 			VpcId:            vpc.ID(),
 			CidrBlock:        pulumi.String("10.0.3.0/24"),
 			AvailabilityZone: pulumi.String("us-east-2c"),
-			Tags: pulumi.StringMap{
-				"Name": pulumi.String(prefix + "-priv-subnet-3"),
-			},
+			Tags:             pulumi.ToStringMap(resourceTags),
 		})
 		if err != nil {
 			return err
 		}
 
 		// 3 Public Subnets
+		resourceTags["Name"] = prefix + "-pub-subnet-1"
 		pubSubnet1, err := ec2.NewSubnet(ctx, prefix+"-pub-subnet-1", &ec2.SubnetArgs{
 			VpcId:            vpc.ID(),
 			CidrBlock:        pulumi.String("10.0.4.0/24"),
 			AvailabilityZone: pulumi.String("us-east-2a"),
-			Tags: pulumi.StringMap{
-				"Name": pulumi.String(prefix + "-pub-subnet-1"),
-			},
+			Tags:             pulumi.ToStringMap(resourceTags),
 		})
 		if err != nil {
 			return err
 		}
+		resourceTags["Name"] = prefix + "-pub-subnet-2"
 		pubSubnet2, err := ec2.NewSubnet(ctx, prefix+"-pub-subnet-2", &ec2.SubnetArgs{
 			VpcId:            vpc.ID(),
 			CidrBlock:        pulumi.String("10.0.5.0/24"),
 			AvailabilityZone: pulumi.String("us-east-2b"),
-			Tags: pulumi.StringMap{
-				"Name": pulumi.String(prefix + "-pub-subnet-2"),
-			},
+			Tags:             pulumi.ToStringMap(resourceTags),
 		})
 		if err != nil {
 			return err
 		}
+		resourceTags["Name"] = prefix + "-pub-subnet-3"
 		pubSubnet3, err := ec2.NewSubnet(ctx, prefix+"-pub-subnet-3", &ec2.SubnetArgs{
 			VpcId:            vpc.ID(),
 			CidrBlock:        pulumi.String("10.0.6.0/24"),
 			AvailabilityZone: pulumi.String("us-east-2c"),
-			Tags: pulumi.StringMap{
-				"Name": pulumi.String(prefix + "-pub-subnet-3"),
-			},
+			Tags:             pulumi.ToStringMap(resourceTags),
 		})
 		if err != nil {
 			return err
@@ -129,13 +128,12 @@ func main() {
 		// Docs: https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html
 
 		// NAT Gateway with EIP
+		resourceTags["Name"] = prefix + "-nat-gw-1"
 		natGw1, err := ec2.NewNatGateway(ctx, prefix+"-nat-gw-1", &ec2.NatGatewayArgs{
 			AllocationId: eip1.ID(),
 			// NAT must reside in public subnet for private instance internet access
 			SubnetId: pubSubnet1.ID(),
-			Tags: pulumi.StringMap{
-				"Name": pulumi.String(prefix + "-nat-gw-1"),
-			},
+			Tags:     pulumi.ToStringMap(resourceTags),
 		})
 		if err != nil {
 			return err
@@ -146,11 +144,10 @@ func main() {
 		// Docs: https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html
 
 		// IGW for the Public Subnets
+		resourceTags["Name"] = prefix + "-gw"
 		igw1, err := ec2.NewInternetGateway(ctx, prefix+"-gw", &ec2.InternetGatewayArgs{
 			VpcId: vpc.ID(),
-			Tags: pulumi.StringMap{
-				"Name": pulumi.String(prefix + "-gw"),
-			},
+			Tags:  pulumi.ToStringMap(resourceTags),
 		})
 		if err != nil {
 			return err
@@ -161,6 +158,7 @@ func main() {
 		// Docs: https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html
 
 		// Private Route Table for Private Subnets
+		resourceTags["Name"] = prefix + "-rtb-private-1"
 		privateRouteTable, err := ec2.NewRouteTable(ctx, prefix+"-rtb-private-1", &ec2.RouteTableArgs{
 			VpcId: vpc.ID(),
 			Routes: ec2.RouteTableRouteArray{
@@ -170,15 +168,14 @@ func main() {
 					GatewayId: natGw1.ID(),
 				},
 			},
-			Tags: pulumi.StringMap{
-				"Name": pulumi.String(prefix + "-rtb-private-1"),
-			},
+			Tags: pulumi.ToStringMap(resourceTags),
 		})
 		if err != nil {
 			return err
 		}
 
 		// Public Route Table for Public Subnets
+		resourceTags["Name"] = prefix + "-rtb-public-1"
 		publicRouteTable, err := ec2.NewRouteTable(ctx, prefix+"-rtb-public-1", &ec2.RouteTableArgs{
 			VpcId: vpc.ID(),
 			Routes: ec2.RouteTableRouteArray{
@@ -188,9 +185,7 @@ func main() {
 					GatewayId: igw1.ID(),
 				},
 			},
-			Tags: pulumi.StringMap{
-				"Name": pulumi.String(prefix + "-rtb-public-1"),
-			},
+			Tags: pulumi.ToStringMap(resourceTags),
 		})
 		if err != nil {
 			return err
@@ -286,6 +281,7 @@ func main() {
 		// Docs: https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html
 
 		// Create a Security Group that we can use to actually connect to our cluster
+		resourceTags["Name"] = prefix + "-cluster-sg"
 		clusterSg, err := ec2.NewSecurityGroup(ctx, prefix+"-cluster-sg", &ec2.SecurityGroupArgs{
 			VpcId: vpc.ID(),
 			Egress: ec2.SecurityGroupEgressArray{
@@ -304,9 +300,7 @@ func main() {
 					CidrBlocks: pulumi.StringArray{pulumi.String("0.0.0.0/0")},
 				},
 			},
-			Tags: pulumi.StringMap{
-				"Name": pulumi.String(prefix + "-cluster-sg"),
-			},
+			Tags: pulumi.ToStringMap(resourceTags),
 		})
 		if err != nil {
 			return err
@@ -387,6 +381,7 @@ func main() {
 		var privsubnetIds pulumi.StringArray
 
 		// Node Group 1
+		resourceTags["Name"] = prefix + "-worker-group-1"
 		_, err = eks.NewNodeGroup(ctx, prefix+"-worker-group-1", &eks.NodeGroupArgs{
 			ClusterName: cluster.Name,
 			SubnetIds: pulumi.StringArray(
@@ -402,15 +397,14 @@ func main() {
 				MinSize:     pulumi.Int(1),
 				MaxSize:     pulumi.Int(1),
 			},
-			Tags: pulumi.StringMap{
-				"Name": pulumi.String(prefix + "-worker-group-1"),
-			},
+			Tags: pulumi.ToStringMap(resourceTags),
 		})
 		if err != nil {
 			return err
 		}
 
 		// Node Group 2
+		resourceTags["Name"] = prefix + "-worker-group-2"
 		_, err = eks.NewNodeGroup(ctx, prefix+"-worker-group-2", &eks.NodeGroupArgs{
 			ClusterName: cluster.Name,
 			SubnetIds: pulumi.StringArray(
@@ -426,9 +420,7 @@ func main() {
 				MinSize:     pulumi.Int(1),
 				MaxSize:     pulumi.Int(1),
 			},
-			Tags: pulumi.StringMap{
-				"Name": pulumi.String(prefix + "-worker-group-2"),
-			},
+			Tags: pulumi.ToStringMap(resourceTags),
 		})
 		if err != nil {
 			return err
